@@ -1,0 +1,33 @@
+
+1. The following protocol outputs the total number of point clouds in a set
+
+//std::cerr<<"PointCloud class data "
+//	 <<new_cloud->width<<new_cloud->height<<" data points. "<<std::endl;
+
+
+------------------------------//----------------------------------------------------------------
+2. The following protocol outputs the x, y, z coord of a designated point cloud
+/* for(size_t i=0; i<new_cloud->points.size(); i++){
+std::cerr<<"X value:"<<new_cloud->points[i].x
+				<<" Y value: "<<new_cloud->points[i].x
+				<<" Z value: "<<new_cloud->points[i].z <<std::endl;
+
+}
+*/
+
+
+------------------------------//----------------------------------------------------------------
+3. The following protocol does a radius point cloud outlier removal for better result
+
+/*
+//Outlier filtering object
+pcl::RadiusOutlierRemoval<pcl::PointXYZ> rad_filter;
+
+rad_filter.setInputCloud(planes_cloud);
+rad_filter.setRadiusSearch(outlier_threshold);
+rad_filter.setMinNeighborsInRadius(neighbors);
+//rad_filter.setNegative(true);
+rad_filter.filter(*filtered_cloud);
+
+*/
+

@@ -1,0 +1,298 @@
+
+Purpose: Log all attempts to create pcl segmentation and object recognition on rviz for the purpose of obtaining intuitive data for JACO arm and 3D-reconstruction of an environment
+
+----------------------------------------------------------------------------------------------------------------
+Point Cloud Data Types
+
+sensor::msgs::PointCloud
+	-->Contains x, y,z points (all floats)
+
+sensor_msgs::PointCloud2
+	-->New revised point cloud msg that represents arbitrary n-D data
+	-->Can be any primitive data types (int, float, double, etc)
+	-->obtains height and width values ( it gives data a 2-D structure) to correspond to an image of the 	        same region
+
+pcl::PointCloud<T> 
+	--> core point clouse class in PCL library - can be templated on any of Point Types
+	-->Point Elements:
+		
+	  
+    	1. width - specifies the width of the point cloud dataset in the number of points. WIDTH has two 			meanings:
+        	it can specify the total number of points in the cloud (equal with POINTS see below) for 			unorganized datasets;
+        	it can specify the width (total number of points in a row) of an organized point cloud dataset. 		Mandatory.
+    	2. height - specifies the height of the point cloud dataset in the number of points. HEIGHT has two 			meanings:
+        	it can specify the height (total number of rows) of an organized point cloud dataset;
+        	it is set to 1 for unorganized datasets (thus used to check whether a dataset is organized or 			not). Mandatory.
+    	3. points - the data array where all points of type PointT are stored. Mandatory.
+    		is_dense - specifies if all the data in points is finite (true), or whether it might contain 			Inf/NaN values (false). Mandatory.
+    	4. sensor_origin_ - specifies the sensor acquisition pose (origin/translation). Optional.
+    		sensor_orientation_ - specifies the sensor acquisition pose (rotation). Optional.
+
+
+****	-->USE this template class to in point cloud processing node, rather than with the message object
+	-->You can work iwht the individual points as object rather nthan having to work with their raw data 
+	--> TYPES UTILIZED <T> (most common to be used in these algorithms)
+
+	1. pcl::PointXYZ
+		-->A point structure representing Euclidean xyz coordinates. 
+		-->pcl::PointXYZ::PointXYZ ( float _x, float _y,float _z)	 
+
+	2. pcl::PointXYZI
+		-->A point structure representing Euclidean xyz coordinates, and the intensity value. 
+		-->
+	3. pcl::PointXYZRGBA
+		-->A point structure representing Euclidean xyz coordinates, and the RGBA color. 
+		-->
+	4. pcl::PointXYZRGB
+		-->A point structure representing Euclidean xyz coordinates, and the RGB color. 
+		-->
+	5. pcl::PointXY
+		-->A 2D point structure representing Euclidean xy coordinates
+		--> Public Attributes:
+			-> float x
+			-> float y
+	6. pcl::Normal
+		-->A point structure representing normal coordinates and the surface curvature estimate. 
+		-->
+	7. pcl::PointNormal
+		-->A point structure representing Euclidean xyz coordinates, together with normal coordinates and the surface curvature estimate. 
+		-->
+
+-------------------------------------------------------------------------------------------------------------------------
+Converting from different PointClouds
+
+1. First Method - Converting PointCloud to PointCloud2
+
+ void pcl::toROSMsg(const pcl::PointCloud<PointT> &cloud, sensor_msgs::PointCloud2 &msg) 
+
+2. Second Method - Converting PointCloud2 to a PointCloud<PointT>
+
+ void pcl::fromROSMsg (const sensor_sensor::PointCloud2 &msg, pcl::PointCloud<PointT>&cloud)
+
+
+-----------------------------------------------------------------------------------------------------------------------------
+References C++
+
+--> operator '&'
+--> reference is declared by using the ampersand (&) between the reference type and the variable name 
+--> it is utilized when 
+
+
+------------------------------------------------------------------------------------------------------------------------------
+Parameter Server
+
+-->ROS Parameter Server: can store strings, integers, floats, booleans, lists, dictionaries etc
+-->Parameter Server API: - supports all sorts of data types and sets of types
+			 - Easy to use
+				i.   strings
+				ii.  integers
+				iii. floats
+				iv.  booleans: false is returned if the parameter does not exist or not of the right type
+			 - Two different parameter APIs
+				1. bare version - ros::param namespace
+					  	- ros::param::get() --> parameters retrieved through the "bare" version are resolved 
+									relative to the node's namespace 
+						-Getting Parameter Ex:
+
+				std::string global_name, relative_name, default_param;
+				if(ros::param::get("/global_name", global_name)){
+							....
+								}
+				if(ros::param::get("/relative_name", relative_name)){
+							.....
+								}
+				//default value version
+				ros::param::param<std::string>("default_param", default_param, "default_value");
+
+						-Setting Parameter Ex:
+
+				ros::param::set("/global_param", 5);
+				ros::param::set("relative_name", "my_string");
+				ros::param::set("bool_param", false);
+
+						-Checking Parameter Existence Ex:
+
+				if(ros::param::has("my_param")){
+					....
+						}
+
+						-Accessing Private Parameters Ex:
+
+				std::string param;
+				ros::param::getParam("private_name", param);
+
+
+-----------//--------------------------------------------------------//---------------------
+
+				2. handle version - ros::NodeHandle interface
+						  - ros::NodeHandle::getParam() --> parameter retrieved through NodeHandle version are
+										    resolved relative to the NodeHandle's namespace
+						  -Getting ParameterEx: 
+
+				ros::NodeHandle node;
+				std::string global_name, relative_name, default_praram;
+				if(node.getParam("/globa_name", global_name)){
+						....
+							}
+				if(node.getParam("/relative_name", relative_name)){
+						....
+							}
+				//default value version
+				node.param<std::string>("default_param", default_param, "default_value");
+
+
+						    -Setting Parameter Ex:
+
+
+				ros::NodeHandle node;
+				node.setParam("/global_param", 5);
+				node.setParam("/relative_param", "my_string");
+				node.setParam("bool_param", false);
+
+						    -Checking Parameter Ex:
+				ros::NodeHandle node;
+				if(node.hasParam("my_param")){
+					....
+						}
+						  
+						    -Accessing Private Parameters Ex:
+				ros::NodeHandle node("~");
+				std::string param;
+				node.getParam("Private_name", param);
+
+						
+
+
+
+
+
+
+
+-------------------------------------//---------------------------------------------------------//---------------------------------------
+
+-------------------------------------//---------------------------------------------------------//---------------------------------------
+Cloud Processing - BASIC
+
+-> a pcl::PointCloud<PointT> object stores the points inside a std::vector<PointT> structure
+-> cloud objects( pcl::PointCloud<PointT>): exposes a few functions that lets you get information about them - like point count
+-> classes are TEMPLATED - thus can be easily instantiated
+->Clouds are usually handled with pointers - since they tend to be large (TOTAL number of points in a space can range up to 77,000 clouds)
+
+--CAREFUL not to mix cloud objects and cloud object POINTERS
+
+/*Concatenating Two Clouds*/
+->Two types of concatenation with pcl
+
+	1. Points: -Two cloudsm, A (with n-num of points) and B(with p-num of points)
+						 - A third cloud C is created (with n+p)
+						 - Point Types must be the same for all clouds
+
+	2. Fields: - Can join the fields of two clouds with different types
+						 - CONSTRAINTS: both have to be the same number of points
+
+->use the cloud's add operator (+) which is the overload
+->EX:
+	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloudA(new pcl::PointCloud<pcl::PointXYZRGB>);
+	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloudB(new pcl::PointCloud<pcl::PointXYZRGB>);
+	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloudC(new pcl::PointCloud<pcl::PointXYZRGB>);
+
+//Create cloud "C", with the points of both "A" and "B"
+	*cloudC = (*cloudA) + (*cloudB);
+//Now cloudC-point.size() = cloudA.size()+cloudB.size().
+
+->EX2: Cocatenate the fields (PointXYZ + Normal = PointNormal)
+	pcl::PointCloud<pcl::PointXYZ>::Ptr cloudPoints(new pcl::PointCloud<pcl::PointXYZ>);
+	pcl::PointCloud<pcl::Normal>::Ptr cloudNormal(new pcl::PointCloud<pcl::Normal>);
+	pcl::PointCloud<pcl::PointNormal>::Ptr cloudAll(new pcl::PointCloud<pcl::PointNormal>);
+
+	//Compute the normals of the clouds
+	pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal> normalEstimation;
+	normalEstimation.setInputCloud(cloudPoints);
+	normalEstimation.setRadiusResearch(0.05);
+	pcl::search::KdTree<pcl::PointXYZ>::Ptr kdtree(new pcl::search::KdTree<pcl::PointXYZ>);
+	normalEstimation.setSearchMethod(kdtree);
+	normalEstimation.compute(*cloudNormals);
+
+	//concatenate the fields
+	pcl::contenateFields(*cloudPoints, *cloudNormals, *cloudAll);
+
+------------------------------------------------//--------------------
+INDICES
+
+->Definition: list of some of the points of a cloud (not hte poits themselves with all their data - just their index in the cloud)
+->pcl::Extract Indices: to extract the points that were considered to fit the cylinder
+->setNegative(): instruct it to extract the points NOT indexed - remove all cylinder-shaped clusters from the cloud
+->EX:
+
+	pcl::PointCloud<pcl::PointXYZ>::Ptr cloudAll(new pcl::PointCloud<pcl::PointXYZ>);
+	pcl::PointCloud<pcl::PointXYZ>::Ptr cloudExtracted(new pcl::PointCloud<pcl::PointXYZ>);
+
+	//Plane Segmentation 
+	pcl::ModelCoefficients::Ptr coeff(new pcl::ModelCoefficients);
+	pcl::SACSegmentation<pcl::PointXYZ> segmentation;
+	segmentation.setOptimizeCoefficients(true);
+	segmentation.setModelType(pcl::SACMODEL_PLANE);
+	segmentation.setMethodTyep(pcl::SAC_RANSAC);
+	segmentation.setDistanceThreshold(0.01);
+	segmentation.setInputCloud(cloudAll);
+
+	//object for extracting points from a list of indices
+	pcl::PointIndices::Ptr pointIndices(new pcl::PointIndices);
+
+	segmentation.segment(*pointIndices, *coefficients);
+	
+	//object for extracting points from a list of indices
+	pcl::ExtractIndices<pcl::PointXYZ> extract;
+	extract.setInputCloud(cloudAll);
+	extract.setIndices(pointIndices);
+
+	//will extract the points that are NOT indexed(the ones that are not in a plane)
+	extract.setNegative(true);
+	extract.filter(*cloudExtracted);
+
+//
+
+
+	
+
+
+
+
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
